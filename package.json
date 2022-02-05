@@ -1,0 +1,21 @@
+{
+  "name": "puppeteertools",
+  "version": "1.0.0",
+  "description": "Headless browsing tools such as web-scraping and automated login",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "Puppeteer",
+    "Headless Browsing",
+    "Automated Login",
+    "Web Scraping"
+  ],
+  "author": "\"roomrys\"",
+  "license": "ISC",
+  "dependencies": {
+    "prettier": "^2.5.1",
+    "puppeteer": "^13.1.3"
+  }
+}
