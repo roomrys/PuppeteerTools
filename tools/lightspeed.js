@@ -1,42 +1,18 @@
 const { intersects } = require("prettier")
 const puppeteer = require("puppeteer")
+const { lightspeedPrivate } = require("./private.js")
+const { Contact } = require("./lightspeed-objects.js")
 
-// BUG! observation: first page.type element called on page is sometimes skipped/not entered
-// ..... possible causes: use of puppeteer, src puppeteer, use of async functions
 
-// TODO: extract workOrderInfo (with following structure) from 
-// ..... Google Sheets using either AppScript or Sheets API
-const workOrderInfo = {
-    contact: { // all the contact info required by new work order form
-        firstName: "Spoof Customer First Name",
-        lastName: "Spoof Customer Last Name",
-        address: {
-            street: "1234 Someplace Somewhere",
-            streetCont: "",
-            city: "San Diego",
-            country: "United States",
-            state: "California",
-            zip: "98765"
-        },
-        phone: {
-            home: "",
-            work: "",
-            mobile: "9876543210"
-        },
-        email: {
-            primary: "address@email.address",
-            alternate: ""
-        },
-        birthdate: {
-            day: "1",
-            month: "1"
-        },
-        type: "None"
-    }
-}
+// TODO: extract workOrderInfo from Google Sheets using either AppScript or Sheets API
+let workOrderInfo = {contact: new Contact(firstName="Spoof Customer First Name", lastName="Spoof Customer Last Name")};
+workOrderInfo.contact.setAddress(street="1234 Someplace Somewhere", streetCont="", city="San Diego", country="United States", state="California", zip="98765");
+workOrderInfo.contact.setPhone(home="", work="", mobile="9876543210");
+workOrderInfo.contact.setEmail(primary="address@email.address");
+workOrderInfo.contact.setEct(birthMonth="01", birthDay="01");
 
 // run the function
-lightspeed('notmylogin', 'notmypassword', workOrderInfo)
+lightspeed(lightspeedPrivate.username, lightspeedPrivate.password, workOrderInfo)
 
 // -----------------------------------------------------------------------
 // all the fun!...ctions--------------------------------------------------
@@ -68,7 +44,7 @@ async function login(page, lightspeedLogin, lightspeedPassword) {
     const submitElementID = '#submitButton'
 
     // go to the lightspeed login page
-    await page.goto(lightspeedLoginURL)
+    await page.goto(lightspeedLoginURL, {waitUntil: 'networkidle2'})
 
     // input and submit login credentials
     await page.waitForSelector('input' + loginElementID)
@@ -87,20 +63,21 @@ async function createNewWorkOrder(page, workOrderInfo) {
     // TODO: use query selector all to get all input elements on this page
     // TODO: pair query selector inputs with workOrderInfo values
     const newWorkOrderURL = "https://us.merchantos.com/?name=workbench.views.beta_workorder&form_name=view&id=undefined&tab=details"
-    const firstNameNameAttr = 'f_name'
-    const lastNameNameAttr = 'l_name'
-    const streetAddressNameAttr = 'address1'
-    const streetAddressContNameAttr = 'address2'
 
-    await page.goto(newWorkOrderURL)
+    await page.goto(newWorkOrderURL, {waitUntil: 'networkidle2'})
 
     // find/create customer
     // TODO: write loop that iterates through input elements and associated workOrderInfo
-    await page.waitForSelector('input' + "[name=" + firstNameNameAttr + "]")
-    await page.type("input" + "[name=" + firstNameNameAttr + "]", workOrderInfo.contact.firstName)
-    await page.type("input" + "[name=" + lastNameNameAttr + "]", workOrderInfo.contact.lastName)
-    await page.type("input" + "[name=" + streetAddressNameAttr + "]", workOrderInfo.contact.address.street)
-    await page.type("input" + "[name=" + streetAddressContNameAttr + "]", workOrderInfo.contact.address.streetCont)
+    for (const [_, value] of Object.entries(contactDOMs.contact)) {
+        for (const [_, innerValue] of Object.entries(value)) {
+            console.log(`${innerValue.getAttributeQuery()}`)
+            await page.type(`${innerValue.getAttributeQuery()}`, workOrderInfo.contact[''])
+        }
+    }
+    await page.type(workOrderInfo.contact.name.first.getAttributeQuery(first), workOrderInfo.contact.name.first.userInput)
+    await page.type(workOrderInfo.contact.name.first.getAttributeQuery(last), workOrderInfo.contact.name.first.userInput)
+    await page.type(workOrderInfo.contact.name.first.getAttributeQuery(street), workOrderInfo.address.street.userInput)
+    await page.type(workOrderInfo.contact.name.first.getAttributeQuery(streetCont), workOrderInfo.address.streetCont.userInput)
 
     // TODO: scan workorder customer matches list for matching name and number|address|email
     //      if multiple matches, take customer with most matching fields (most data)
