@@ -200,7 +200,7 @@ class Login {
     constructor(username, password, url, page) {
         this.username = new HasDomElement(username, page)
         this.password = new HasDomElement(password, page)
-        this.button = new HasDomElement('')
+        this.button = new HasDomElement(null, page)
         this.url = url
     }
 }

@@ -34,7 +34,7 @@ consoleColor = {
  * @class
  * @classdesc Class to associate a user input to a DOM element.
  * Takes in userInput to set this.userInput in constructor.
- * User must later specify DOM Element this.dom with setter setDomElement(dElement) where dElement=document.getElementByID() or related method.
+ * User must later specify DOM Element this.dom with setDomElement(dElement) where dElement=document.getElementByID() or related method.
  * Then, the attributes this.attributesObj of this.dom can be found using setter domAttributes().
  * Lastly, a CSS Selector query can be produced using the getter attributeQuery().
  */
@@ -49,6 +49,12 @@ consoleColor = {
         this.page = page
     }
 
+    async getDOM(query) {
+        var that = this
+        await this.page.$(query)
+        .then((dElement) => that.setDomElement(dElement))
+    }
+
     /**
      * @method setDomElement
      * Stores the Document Object Model of selected element in this.dom. Also retrieves tagName of this.dom, stored in this.element
@@ -56,8 +62,11 @@ consoleColor = {
      */
     setDomElement(dElement) {
         this.dom = dElement
-        return this.page.evaluate((dElement) => dElement.tagName, dElement)
-        .then((tag) => {consoleColor.yellow(`setDomElement tag = \n${(tag)}`); return tag})
+    }
+
+    getTag() {
+        return this.page.evaluate((dElement) => dElement.tagName, this.dom)
+        .then((tag) => {consoleColor.yellow(`getTag tag = \n${(tag)}`); return tag})
     }
 
     /**
@@ -107,7 +116,7 @@ consoleColor = {
      */
     async getSelectorQuery(dElement) {
         var that = this
-        return this.setDomElement(dElement)
+        return this.getTag(dElement)
         .then((tag) => {
             let query = tag
             return that.domAttributes().then(({attributesObj, ID, CLASS}) => {
@@ -127,6 +136,23 @@ consoleColor = {
             })
         })
         .then((query)=> {consoleColor.cyan(`getSelectorQuery query = \n${query}`); return query})
+    }
+
+    async enterInput() {
+        var that = this
+        await this.getSelectorQuery()
+        .then((query) => that.page.type(query, that.userInput))
+    }
+
+    async clickDOM() {
+        var that = this
+        await this.getSelectorQuery()
+        .then(async (query) => {
+            await Promise.all([
+            that.page.waitForNavigation(),
+            that.page.click(query)
+        ])}
+        )
     }
 }
 
