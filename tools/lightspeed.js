@@ -1,7 +1,8 @@
 const { intersects } = require("prettier")
 const puppeteer = require("puppeteer")
 const { lightspeedPrivate } = require("./private.js")
-const { Contact } = require("./lightspeed-objects.js")
+const { Contact, Login } = require("./lightspeed-objects.js")
+const { consoleColor } = require("./utility.js")
 
 
 // TODO: extract workOrderInfo from Google Sheets using either AppScript or Sheets API
@@ -24,38 +25,44 @@ async function lightspeed(userName, passWord, workOrderInfo) {
 
     // login into lightspeed from login page
     await login(page, userName, passWord)
-    console.log(page.url())
+    consoleColor.purple(page.url())
     await page.waitForTimeout(1000)
 
-    // once logged in, create a new work order
-    await createNewWorkOrder(page, workOrderInfo)
-    console.log(page.url())
-    await page.waitForTimeout(5000)
+    // // once logged in, create a new work order
+    // await createNewWorkOrder(page, workOrderInfo)
+    // console.log(page.url())
+    // await page.waitForTimeout(5000)
 
     // close the browser
     await browser.close()
 }
 
-async function login(page, lightspeedLogin, lightspeedPassword) {
+async function login(page, username, password) {
     // variables that may change as lightspeed updates their webpage
-    const lightspeedLoginURL = "https://cloud.lightspeedapp.com/login.html"
-    const loginElementID = '#login-input'
-    const passwordElementID = '#password-input'
-    const submitElementID = '#submitButton'
+    const loginURL = "https://cloud.lightspeedapp.com/login.html"
+    lightspeedLogin = new Login(username, password, loginURL, page)
 
     // go to the lightspeed login page
-    await page.goto(lightspeedLoginURL, {waitUntil: 'networkidle2'})
+    consoleColor.purple(lightspeedLogin.url)
+    await page.goto(lightspeedLogin.url, {waitUntil: 'networkidle2'})
+    const usernameDOM = await page.$('#login-input')
+    const passwordDOM = await page.$('#password-input')
+    const submitDOM = await page.$('#submitButton')
 
     // input and submit login credentials
-    await page.waitForSelector('input' + loginElementID)
-    await page.type(loginElementID, lightspeedLogin)
-    await page.waitForSelector('input' + passwordElementID)
-    await page.type(passwordElementID, lightspeedPassword)
-    await page.waitForSelector('button' + submitElementID)
-    await Promise.all([
+    await lightspeedLogin.username.getSelectorQuery(usernameDOM)
+    .then((query) => page.type(query, lightspeedLogin.username.userInput))
+    await lightspeedLogin.password.getSelectorQuery(passwordDOM)
+    .then((query) => page.type(query, lightspeedLogin.password.userInput))
+
+    // hit submit and wait for navigation
+    await lightspeedLogin.password.getSelectorQuery(submitDOM)
+    .then(async (query) => {
+        await Promise.all([
         page.waitForNavigation(),
-        page.click(submitElementID)
-    ]);
+        page.click(query)
+    ])}
+    )
 }
 
 async function createNewWorkOrder(page, workOrderInfo) {
@@ -70,7 +77,7 @@ async function createNewWorkOrder(page, workOrderInfo) {
     // TODO: write loop that iterates through input elements and associated workOrderInfo
     for (const [_, value] of Object.entries(contactDOMs.contact)) {
         for (const [_, innerValue] of Object.entries(value)) {
-            console.log(`${innerValue.getAttributeQuery()}`)
+            consoleColor.purple(`${innerValue.getAttributeQuery()}`)
             await page.type(`${innerValue.getAttributeQuery()}`, workOrderInfo.contact[''])
         }
     }

@@ -1,4 +1,4 @@
-const { HasDomElement } = require("./utility.js")
+const { consoleColor, HasDomElement } = require("./utility.js")
 
 /**
  * @class
@@ -149,8 +149,9 @@ class Contact {
      * @param {String} first - User specified first name
      * @param {String} last - User specified last name
      */
-    constructor(firstName, lastName) {
+    constructor(firstName, lastName, url) {
         this.name = new Name(firstName, lastName);
+        this.url = url
     }
 
     /**
@@ -195,4 +196,13 @@ class Contact {
     }
 }
 
-module.exports = { Contact }
+class Login {
+    constructor(username, password, url, page) {
+        this.username = new HasDomElement(username, page)
+        this.password = new HasDomElement(password, page)
+        this.button = new HasDomElement('')
+        this.url = url
+    }
+}
+
+module.exports = { Contact, Login }
