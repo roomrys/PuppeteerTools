@@ -1,22 +1,7 @@
-// Copyright 2018 Google LLC
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//    http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-
 'use strict';
 
-// [START main_body]
 const {google} = require('googleapis');
 const express = require('express');
-const opn = require('open');
 const path = require('path');
 const fs = require('fs');
 const {MomentApp} = require('./private/sheets-private');
@@ -26,7 +11,7 @@ const scopes = ['https://www.googleapis.com/auth/spreadsheets.readonly'];
 
 const app = express();
 app.get("/", async (req, res) => {
-    // Create an oAuth2 client to authorize the API call
+    // Create an GoogleAuth client to authorize the API call
     const auth = new google.auth.GoogleAuth({
         keyFile: keyfile,
         scopes: scopes
@@ -42,6 +27,7 @@ app.get("/", async (req, res) => {
     });
 
     const spreadsheetId = MomentApp.spreadsheetId;
+    const tableTitle = MomentApp.customersTable;
 
     // Get metadata of spreadsheet
     const metaData = await googleSheets.spreadsheets.get({
@@ -49,7 +35,15 @@ app.get("/", async (req, res) => {
         spreadsheetId
     });
 
-    res.send(metaData.data)
+    // Read rows from spreadsheet
+    const getRows = await googleSheets.spreadsheets.values.get({
+        auth,
+        spreadsheetId,
+        range: tableTitle
+    });
+
+    res.send(getRows.data);
+    res.set(response)
 });
 
 const port = 3000
